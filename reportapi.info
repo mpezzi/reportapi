@@ -1,0 +1,9 @@
+name = Report API
+description = Provides a simple reporting api.
+core = 6.x
+package = "Custom"
+
+version = 6.x
+
+dependencies[] = date
+dependencies[] = date_api

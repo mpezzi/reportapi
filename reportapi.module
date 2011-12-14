@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Provides a simple reporting api.
+ */
+
+
+/**
+ * Implements hook_perm().
+ */
+function reportapi_perm() {
+  return array('view reports api');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function reportapi_menu() {
+  return array(
+    'admin/reports/reportapi' => array(
+      'title' => 'Report API',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('reportapi_report_form'),
+      'access arguments' => array('view reports api'),
+      'type' => MENU_NORMAL_ITEM,
+    ),
+  );
+}
+
+/**
+ * Page Callback: View reports api.
+ */
+function reportapi_report_form() {
+  $format = 'm-d-Y';
+
+  $start = strtotime(variable_get('reportapi_start', 0));
+  $end = strtotime(variable_get('reportapi_end', 0));
+
+  $form['reportapi_start'] = array(
+    '#type' => 'date_select',
+    '#title' => t('Start Date'),
+    '#description' => t('Start date for report (Note: 12:00 am or 00:00 of that day)'),
+    '#date_format' => $format,
+    '#date_label_position' => 'within',
+    '#date_year_range' => '0:+3',
+    '#date_timezone' => 'America/Toronto',
+    '#default_value' => variable_get('reportapi_start', 'now'),
+  );
+
+  $form['reportapi_end'] = array(
+    '#type' => 'date_select',
+    '#title' => t('End Date'),
+    '#description' => t('End date for report (Note: 12:00 am or 00:00 of that day)'),
+    '#date_format' => $format,
+    '#date_label_position' => 'within',
+    '#date_year_range' => '0:+3',
+    '#date_timezone' => 'America/Toronto',
+    '#default_value' => variable_get('reportapi_end', 'now'),
+  );
+
+  // Invoke modules to add there reports.
+  foreach ( module_invoke_all('reportapi_report', $start, $end) as $report_name => $report ) {
+    $form[$report_name] = array(
+      '#type' => 'fieldset',
+      '#title' => $report['title'],
+      '#description' => isset($report['description']) ? $report['description'] : '',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    foreach ( $report['reports'] as $key => $item ) {
+      $form[$report_name][$key] = array(
+        '#type' => 'item',
+        '#title' => $item['title'],
+        '#description' => isset($item['description']) ? $item['description'] : '',
+        '#value' => $item['value'],
+      );
+    }
+  }
+
+  return system_settings_form($form);
+}
